@@ -1,0 +1,25 @@
+/* BeMo 0.7: independent phonics practice, no automatic speech scoring */
+window.BEMO_CHALLENGE=(function(){
+ const BANK=[
+ {word:'cat',parts:['c','a','t'],meaning:'con mèo',rule:'a ngắn /æ/',contrast:['cat','cut','coat']},
+ {word:'ship',parts:['sh','i','p'],meaning:'con tàu',rule:'sh là một âm /ʃ/',contrast:['ship','sheep','shop']},
+ {word:'sheep',parts:['sh','ee','p'],meaning:'con cừu',rule:'ee thường đọc /iː/',contrast:['sheep','ship','shop']},
+ {word:'cake',parts:['c','a','ke'],meaning:'bánh ngọt',rule:'e cuối câm thường làm a đọc /eɪ/',contrast:['cake','cat','cap']},
+ {word:'book',parts:['b','oo','k'],meaning:'quyển sách',rule:'oo trong book đọc /ʊ/',contrast:['book','boot','back']},
+ {word:'food',parts:['f','oo','d'],meaning:'đồ ăn',rule:'oo trong food đọc /uː/',contrast:['food','foot','feed']},
+ {word:'three',parts:['th','r','ee'],meaning:'số ba',rule:'th vô thanh /θ/',contrast:['three','tree','free']},
+ {word:'this',parts:['th','i','s'],meaning:'cái này',rule:'th hữu thanh /ð/',contrast:['this','thin','these']},
+ {word:'kite',parts:['k','i','te'],meaning:'cái diều',rule:'e cuối câm làm i đọc /aɪ/',contrast:['kite','kit','kid']},
+ {word:'sing',parts:['s','i','ng'],meaning:'hát',rule:'ng cuối thường đọc /ŋ/',contrast:['sing','sin','sink']},
+ {word:'write',parts:['wr','i','te'],meaning:'viết',rule:'w trong wr câm',contrast:['write','right','ride']},
+ {word:'green',parts:['gr','ee','n'],meaning:'màu xanh lá',rule:'gr giữ cả /ɡ/ và /r/',contrast:['green','grain','grown']}
+ ];
+ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const DAY=86400000;
+ function due(profile){profile.phonicsReview=profile.phonicsReview||{};return BANK.filter(w=>!profile.phonicsReview[w.word]||profile.phonicsReview[w.word].next<=Date.now())}
+ function update(profile,word,ok){profile.phonicsReview=profile.phonicsReview||{};const old=profile.phonicsReview[word]||{level:0,tries:0};const level=ok?Math.min(5,old.level+1):0;profile.phonicsReview[word]={level,tries:old.tries+1,next:Date.now()+(ok?[1,2,4,7,14][level-1]*DAY:0),last:ok?'Tự đọc được':'Cần ôn'};}
+ function render(root,profile,save,speak){let idx=0,shown=false,mode='read',answered=false;const list=due(profile).length?due(profile):BANK;function draw(){const w=list[idx%list.length];root.innerHTML=`<section class="panel"><span class="chip">TIẾNG ANH · THỬ THÁCH PHONICS</span><h2>🎯 Tự đọc từ mới</h2><p class="muted">Không hiện IPA trước. Nhìn nhóm chữ, tự ghép âm rồi nghe để kiểm tra. Chọn kết quả trung thực để lên lịch ôn.</p><div class="actions"><button id="challengeRead" class="${mode==='read'?'':'outline'}">👀 Đọc từ</button><button id="challengeListen" class="${mode==='listen'?'':'outline'}">👂 Nghe phân biệt</button></div><div class="details"><p class="muted">Từ ${idx+1}/${list.length} · Đến hạn ôn: ${due(profile).length}</p>${mode==='read'?`<div class="phonics-word" style="font-size:3rem;text-align:center">${esc(w.word)}</div><p style="text-align:center">${w.parts.map(p=>`<span class="chip">${esc(p)}</span>`).join(' ')}</p><p style="text-align:center">${esc(w.meaning)}</p><div class="actions"><button id="challengeHear">🔊 Nghe mẫu</button><button id="challengeShow" class="outline">${shown?'Ẩn giải thích':'💡 Xem quy tắc'}</button></div>${shown?`<p><b>Phân tích:</b> ${esc(w.rule)}</p>`:''}<div class="actions"><button id="challengeGood">✓ Tự đọc được</button><button id="challengeAgain" class="outline">↻ Cần ôn</button></div>`:`<p>Nhấn nghe, rồi chọn đúng từ đã nghe. Không nhìn phiên âm.</p><button id="challengeHear">🔊 Phát âm thanh</button><div class="actions">${w.contrast.map(t=>`<button class="outline" data-choose="${esc(t)}">${esc(t)}</button>`).join('')}</div><p id="challengeResult" role="status"></p>`}</div><div class="actions"><button id="challengeNext" class="outline">Từ tiếp theo →</button></div></section>`;
+ root.querySelector('#challengeRead').onclick=()=>{mode='read';shown=false;draw()};root.querySelector('#challengeListen').onclick=()=>{mode='listen';answered=false;draw()};root.querySelector('#challengeHear').onclick=()=>speak(w.word,.7);root.querySelector('#challengeNext').onclick=()=>{idx=(idx+1)%list.length;shown=false;answered=false;draw()};if(mode==='read'){root.querySelector('#challengeShow').onclick=()=>{shown=!shown;draw()};for(const [id,ok] of [['challengeGood',true],['challengeAgain',false]])root.querySelector('#'+id).onclick=()=>{update(profile,w.word,ok);save();idx=(idx+1)%list.length;shown=false;draw()}}else root.querySelectorAll('[data-choose]').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const ok=b.dataset.choose===w.word;root.querySelector('#challengeResult').textContent=ok?'✓ Đúng!':'Chưa đúng. Từ vừa nghe là: '+w.word;root.querySelectorAll('[data-choose]').forEach(x=>x.disabled=true);profile.phonicsListening=profile.phonicsListening||{correct:0,total:0};profile.phonicsListening.total++;if(ok)profile.phonicsListening.correct++;save()})}
+ draw();}
+ return {render,BANK};
+})();

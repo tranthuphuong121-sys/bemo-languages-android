@@ -1,0 +1,9 @@
+{
+  "appId": "com.bemo.languages",
+  "appName": "BeMo Languages",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false
+  }
+}

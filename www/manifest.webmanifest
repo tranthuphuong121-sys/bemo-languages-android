@@ -1,0 +1,18 @@
+{
+  "name": "BeMo Languages - Trung Nhật Hàn Anh",
+  "short_name": "BeMo Languages",
+  "description": "Học tiếng Trung, Nhật, Hàn, Anh từng bước",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f8f6",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

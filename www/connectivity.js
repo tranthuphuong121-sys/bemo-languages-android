@@ -1,0 +1,1 @@
+(()=>{'use strict';const node=document.getElementById('connectionStatus');function update(){if(!node)return;node.textContent=navigator.onLine?'🟢 Có kết nối · bài đã tải có thể học ngoại tuyến':'🟠 Đang ngoại tuyến · sử dụng bài đã tải';}window.addEventListener('online',update);window.addEventListener('offline',update);update();})();

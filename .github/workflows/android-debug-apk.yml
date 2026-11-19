@@ -1,0 +1,71 @@
+name: Build Android debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "www/**"
+      - "scripts/**"
+      - "package.json"
+      - "capacitor.config.json"
+      - ".github/workflows/android-debug-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify web application
+        run: npm run verify
+      - name: Create Android project
+        run: npx cap add android
+      - name: Synchronize web assets
+        run: npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: bash gradlew assembleDebug
+      - name: Verify APK package, signature and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          SDK_BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -n "$SDK_BUILD_TOOLS"
+          "$SDK_BUILD_TOOLS/aapt" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='com.bemo.languages'" apk-badging.txt
+          "$SDK_BUILD_TOOLS/apksigner" verify --verbose "$APK" | tee apk-signature.txt
+          sha256sum "$APK" | tee apk-sha256.txt
+          echo "APK verified as nonempty, correct package and signed debug build."
+      - name: Upload APK verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bemo-languages-apk-verification
+          path: |
+            apk-badging.txt
+            apk-signature.txt
+            apk-sha256.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bemo-languages-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
